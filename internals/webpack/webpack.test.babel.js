@@ -1,13 +1,32 @@
+/* eslint-ignore global-require */
 /**
  * TEST WEBPACK CONFIGURATION
  */
 
 const path = require('path');
 const webpack = require('webpack');
+const readFile = require('fs').readFileSync;
 const modules = [
   'app',
   'node_modules',
 ];
+
+const pkg = require(path.resolve(process.cwd(), 'package.json'));
+
+const extraPlugins = () => {
+  const dllPlugin = pkg.dllPlugin;
+
+  if (!dllPlugin) { return []; }
+  const dllPath = path.resolve(process.cwd(), dllPlugin.path || 'node_modules/react-boilerplate-dlls');
+  const manifestPath = path.resolve(dllPath, 'reactBoilerplateDeps.json');
+
+  return [
+    new webpack.DllReferencePlugin({
+      context: process.cwd(),
+      manifest: JSON.parse(readFile(manifestPath).toString()),
+    }),
+  ];
+};
 
 module.exports = {
   devtool: 'inline-source-map',
@@ -50,7 +69,6 @@ module.exports = {
   },
 
   plugins: [
-
     // Always expose NODE_ENV to webpack, in order to use `process.env.NODE_ENV`
     // inside your code for any environment checks; UglifyJS will automatically
     // drop any unreachable code.
@@ -58,7 +76,8 @@ module.exports = {
       'process.env': {
         NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       },
-    })],
+    }),
+  ].concat(extraPlugins()),
 
   // Some node_modules pull in Node-specific dependencies.
   // Since we're running in a browser we have to stub them out. See:

@@ -31,4 +31,9 @@ module.exports = {
   plugins: [
     new webpack.DllPlugin({ name: '[name]', path: join(outputPath, '[name].json') }), // eslint-disable-line no-new
   ],
+  resolve: {
+    alias: {
+      sinon: 'sinon/pkg/sinon',
+    },
+  },
 };

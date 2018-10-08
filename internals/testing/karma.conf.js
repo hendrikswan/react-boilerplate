@@ -1,8 +1,34 @@
 const webpackConfig = require('../webpack/webpack.test.babel');
 const argv = require('minimist')(process.argv.slice(2));
 const path = require('path');
+const pkg = require(path.resolve(process.cwd(), 'package.json'));
 
 module.exports = (config) => {
+  const dllPlugin = pkg.dllPlugin;
+
+  const staticFiles = [{
+    pattern: './test-bundler.js',
+    watched: false,
+    served: true,
+    included: true,
+  }];
+
+  if (dllPlugin) {
+    const dllNames = typeof dllPlugin.dlls === 'object'
+      ? Object.keys(dllPlugin.dlls)
+      : ['reactBoilerplateDeps'];
+
+    dllNames.reverse()
+    .forEach(dllName => (
+      staticFiles.unshift({
+        pattern: `../../node_modules/react-boilerplate-dlls/${dllName}.dll.js`,
+        watched: false,
+        served: true,
+        included: true,
+      })
+    ));
+  }
+
   config.set({
     frameworks: ['mocha'],
     reporters: ['coverage', 'mocha'],
@@ -20,14 +46,7 @@ module.exports = (config) => {
       },
     },
 
-    files: [
-      {
-        pattern: './test-bundler.js',
-        watched: false,
-        served: true,
-        included: true,
-      },
-    ],
+    files: staticFiles,
 
     preprocessors: {
       ['./test-bundler.js']: ['webpack', 'sourcemap'], // eslint-disable-line no-useless-computed-key
